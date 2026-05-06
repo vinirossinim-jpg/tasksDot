@@ -4,267 +4,170 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tasks — DoT</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0f0f0f;
-  --bg2: #161616;
-  --bg3: #1e1e1e;
-  --border: #2a2a2a;
-  --border2: #333;
-  --text: #e8e6e0;
-  --muted: #666;
-  --muted2: #888;
-  --accent: #c8f06e;
-  --accent2: #a8d050;
-  --red: #ff5f57;
-  --amber: #ffbe2e;
-  --green: #28ca41;
-  --mono: 'DM Mono', monospace;
-  --sans: 'DM Sans', sans-serif;
+  --bg:#0f0f0f;--bg2:#161616;--bg3:#1e1e1e;
+  --border:#252525;--border2:#303030;
+  --text:#e8e6e0;--muted:#555;--muted2:#888;
+  --accent:#c8f06e;--accent2:#a8d050;
+  --red:#ff5f57;--amber:#ffbe2e;--green:#28ca41;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --col-prazo:#0d1014;--col-task:#0f0f0f;--col-prio:#0d1014;
+  --col-client:#0b100b;--col-cat:#0d0d12;--col-resp:#0d0b10;
+  --col-done:#0b100b;--col-date:#0d1014;
 }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+.login-box{width:320px;padding:40px 36px;background:var(--bg2);border:1px solid var(--border2);border-radius:2px}
+.login-logo{font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--muted2);text-transform:uppercase;margin-bottom:32px}
+.login-logo span{color:var(--accent)}
+.login-box input[type=password]{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .2s}
+.login-box input[type=password]:focus{border-color:var(--accent)}
+.login-box button{width:100%;margin-top:10px;padding:10px;background:var(--accent);color:#0f0f0f;font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase;border:none;border-radius:2px;cursor:pointer;transition:background .15s}
+.login-box button:hover{background:var(--accent2)}
+.login-error{font-size:11px;color:var(--red);margin-top:8px;font-family:var(--mono);opacity:0;transition:opacity .2s}
+.login-error.show{opacity:1}
 
-/* ── LOGIN ── */
-#login-screen {
-  position: fixed; inset: 0; background: var(--bg);
-  display: flex; align-items: center; justify-content: center; z-index: 100;
-}
-.login-box {
-  width: 320px; padding: 40px 36px;
-  background: var(--bg2); border: 1px solid var(--border2);
-  border-radius: 2px;
-}
-.login-logo {
-  font-family: var(--mono); font-size: 11px; letter-spacing: 3px;
-  color: var(--muted2); text-transform: uppercase; margin-bottom: 32px;
-}
-.login-logo span { color: var(--accent); }
-.login-box input[type=password] {
-  width: 100%; background: var(--bg3); border: 1px solid var(--border2);
-  border-radius: 2px; padding: 10px 14px; color: var(--text);
-  font-family: var(--mono); font-size: 13px; outline: none;
-  transition: border-color .2s;
-}
-.login-box input[type=password]:focus { border-color: var(--accent); }
-.login-box button {
-  width: 100%; margin-top: 10px; padding: 10px;
-  background: var(--accent); color: #0f0f0f;
-  font-family: var(--mono); font-size: 12px; font-weight: 500;
-  letter-spacing: 1px; text-transform: uppercase;
-  border: none; border-radius: 2px; cursor: pointer;
-  transition: background .15s;
-}
-.login-box button:hover { background: var(--accent2); }
-.login-error {
-  font-size: 11px; color: var(--red); margin-top: 8px;
-  font-family: var(--mono); opacity: 0; transition: opacity .2s;
-}
-.login-error.show { opacity: 1; }
-
-/* ── MAIN ── */
-#app { display: none; flex-direction: column; height: 100vh; }
-#app.visible { display: flex; }
+/* APP */
+#app{display:none;flex-direction:column;height:100vh}
+#app.visible{display:flex}
 
 /* topbar */
-.topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px; height: 52px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg); flex-shrink: 0;
-}
-.logo { font-family: var(--mono); font-size: 11px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
-.logo span { color: var(--accent); }
-.add-btn {
-  width: 30px; height: 30px; border-radius: 2px;
-  background: var(--accent); color: #0f0f0f;
-  border: none; cursor: pointer; font-size: 20px; line-height: 1;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 300; transition: background .15s;
-}
-.add-btn:hover { background: var(--accent2); }
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:50px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.logo{font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase}
+.logo span{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.sync-status{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.5px}
+.sync-status.ok{color:var(--accent)}
+.sync-status.err{color:var(--red)}
+.add-btn{width:28px;height:28px;border-radius:2px;background:var(--accent);color:#0f0f0f;border:none;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;font-weight:300;transition:background .15s}
+.add-btn:hover{background:var(--accent2)}
 
-/* filter bar */
-.filterbar {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 24px; border-bottom: 1px solid var(--border);
-  background: var(--bg); flex-shrink: 0; flex-wrap: wrap;
-}
-.filter-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
-select {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: 2px; color: var(--text); font-family: var(--mono);
-  font-size: 11px; padding: 5px 8px; outline: none; cursor: pointer;
-  transition: border-color .15s;
-}
-select:focus, select:hover { border-color: var(--border2); }
-.filter-clear {
-  font-family: var(--mono); font-size: 10px; color: var(--muted);
-  background: none; border: 1px solid var(--border); border-radius: 2px;
-  padding: 5px 8px; cursor: pointer; letter-spacing: 0.5px;
-  transition: all .15s; margin-left: 4px;
-}
-.filter-clear:hover { color: var(--text); border-color: var(--border2); }
-.task-count { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-left: auto; }
+/* filterbar */
+.filterbar{display:flex;align-items:center;gap:6px;padding:8px 20px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
+.filter-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-right:2px}
+select{background:var(--bg3);border:1px solid var(--border);border-radius:2px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 8px;outline:none;cursor:pointer;transition:border-color .15s}
+select:hover,select:focus{border-color:var(--border2)}
+.filter-clear{font-family:var(--mono);font-size:10px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:2px;padding:5px 8px;cursor:pointer;transition:all .15s}
+.filter-clear:hover{color:var(--text);border-color:var(--border2)}
+.task-count{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto}
 
 /* table */
-.table-wrap { flex: 1; overflow-y: auto; }
-table { width: 100%; border-collapse: collapse; }
-thead th {
-  padding: 10px 16px; text-align: left;
-  font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px;
-  color: var(--muted); text-transform: uppercase; font-weight: 400;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg); position: sticky; top: 0; z-index: 2;
-}
-thead th:last-child { text-align: center; }
+.table-wrap{flex:1;overflow-y:auto}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 14px;text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2;cursor:pointer;user-select:none}
+thead th:hover{color:#ddd}
+thead th.sort-asc::after{content:' ↑';color:var(--accent)}
+thead th.sort-desc::after{content:' ↓';color:var(--accent)}
+th.th-prazo{background:#1a1a0d;color:#c8c090} td.td-prazo{background:var(--col-prazo)}
+th.th-task{background:#141414;color:#aaa} td.td-task{background:var(--col-task)}
+th.th-prio{background:#1a1a0d;color:#c8c090;text-align:center;width:52px;cursor:default} td.td-prio{background:var(--col-prio);text-align:center;width:52px}
+th.th-client{background:#0d1a0d;color:#7cc87c} td.td-client{background:var(--col-client)}
+th.th-cat{background:#10101a;color:#9090cc} td.td-cat{background:var(--col-cat)}
+th.th-resp{background:#1a1508;color:#c8a050} td.td-resp{background:var(--col-resp)}
+th.th-done{background:#0d1a0d;color:#7cc87c;text-align:center;width:52px;cursor:default} td.td-done{background:var(--col-done);text-align:center;width:52px}
+th.th-date{background:#1a1a0d;color:#c8c090;text-align:center;width:92px} td.td-date{background:var(--col-date);text-align:center;width:92px}
+th.th-act{background:#0f0f0f} td.td-act{background:var(--bg);text-align:right;width:52px;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:filter .1s}
+tbody tr:hover td{filter:brightness(1.4)}
+tbody tr.done{opacity:.35}
+tbody tr.done .task-name{text-decoration:line-through}
+td{padding:10px 14px;vertical-align:middle}
 
-tbody tr {
-  border-bottom: 1px solid var(--border);
-  transition: background .1s;
-}
-tbody tr:hover { background: var(--bg2); }
-tbody tr.done { opacity: 0.4; }
-tbody tr.done .task-name { text-decoration: line-through; }
+/* prazo */
+.td-prazo{white-space:nowrap;min-width:90px}
+.prazo-wrap{display:flex;align-items:center;gap:6px}
+.urg-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.prazo-txt{font-family:var(--mono);font-size:12px}
+.prazo-vencida{color:var(--red)}
+.prazo-hoje{color:var(--amber)}
+.prazo-semana{color:var(--accent)}
+.prazo-normal{color:var(--muted2)}
+.prazo-sem{color:var(--muted);font-style:italic}
 
-td { padding: 11px 16px; vertical-align: middle; }
+/* task */
+.td-task{max-width:260px}
+.task-name{font-size:13px;color:var(--text)}
+.desc-text{font-size:11px;color:var(--muted2);margin-top:3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
-.td-prazo { font-family: var(--mono); font-size: 12px; white-space: nowrap; min-width: 90px; }
-.prazo-vencida { color: var(--red); }
-.prazo-hoje    { color: var(--amber); }
-.prazo-semana  { color: var(--accent); }
-.prazo-normal  { color: var(--muted2); }
-.prazo-sem     { color: var(--muted); font-style: italic; }
+/* priority */
+.prio-btn{background:none;border:none;cursor:pointer;font-size:14px;font-weight:700;opacity:.15;transition:opacity .15s,transform .15s;padding:2px;line-height:1;color:var(--red);font-family:var(--mono)}
+.prio-btn:hover{opacity:.5;transform:scale(1.1)}
+.prio-btn.sim{opacity:1}
 
-.urg-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 7px; vertical-align: middle; margin-bottom: 1px; }
+/* badges */
+.badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:2px;letter-spacing:.3px}
+.badge-cliente{background:#0d1f0d;color:#5db85d;border:1px solid #1a321a}
+.badge-cat{background:#16161e;color:#8888cc;border:1px solid #222232}
+.badge-resp{background:#1a1610;color:#b89a55;border:1px solid #2e2618}
+.badge-sem{background:var(--bg3);color:var(--muted);border:1px solid var(--border);font-style:italic}
 
-.task-name { font-size: 13px; color: var(--text); font-weight: 400; }
+/* done */
+.done-btn{width:20px;height:20px;border-radius:2px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;color:transparent}
+.done-btn:hover{border-color:var(--accent);color:var(--accent)}
+.done-btn.checked{background:var(--accent);border-color:var(--accent);color:#0f0f0f}
+.done-btn svg{width:11px;height:11px}
 
-.badge {
-  display: inline-block; font-family: var(--mono); font-size: 10px;
-  padding: 2px 8px; border-radius: 2px; letter-spacing: 0.3px;
-}
-.badge-cliente   { background: #1a2a1a; color: #6db86d; border: 1px solid #2a3a2a; }
-.badge-cat       { background: var(--bg3); color: var(--muted2); border: 1px solid var(--border); }
-.badge-resp      { background: #1a1a2a; color: #7070cc; border: 1px solid #2a2a3a; }
-.badge-sem       { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); font-style: italic; }
-.concluido-date { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
-/* desc tooltip */
-.desc-cell { max-width: 220px; }
-.desc-text { font-size: 11px; color: var(--muted2); margin-top: 3px; line-height: 1.4;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* concluido */
+.concluido-date{font-family:var(--mono);font-size:10px;color:var(--muted2)}
 
-/* done toggle */
-td.td-done { text-align: center; }
-.done-btn {
-  width: 22px; height: 22px; border-radius: 2px;
-  border: 1px solid var(--border2); background: var(--bg3);
-  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-  transition: all .15s; color: transparent;
-}
-.done-btn:hover { border-color: var(--accent); color: var(--accent); }
-.done-btn.checked { background: var(--accent); border-color: var(--accent); color: #0f0f0f; }
-.done-btn svg { width: 12px; height: 12px; }
+/* actions */
+.act-btn{width:20px;height:20px;border-radius:2px;border:1px solid transparent;background:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;color:var(--muted);opacity:0;vertical-align:middle}
+tbody tr:hover .act-btn{opacity:1}
+.act-btn:hover{border-color:var(--border2);background:var(--bg3)}
+.act-btn.del:hover{color:var(--red);border-color:var(--red)}
+.act-btn.edit:hover{color:var(--accent);border-color:var(--accent)}
+.act-btn svg{width:10px;height:10px}
 
-/* action buttons */
-td.td-actions { text-align: right; white-space: nowrap; width: 56px; }
-.act-btn {
-  width: 22px; height: 22px; border-radius: 2px;
-  border: 1px solid transparent; background: none;
-  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-  transition: all .15s; color: var(--muted); opacity: 0; vertical-align: middle;
-}
-tbody tr:hover .act-btn { opacity: 1; }
-.act-btn:hover { border-color: var(--border2); background: var(--bg3); }
-.act-btn.del:hover { color: var(--red); border-color: var(--red); }
-.act-btn.edit:hover { color: var(--accent); border-color: var(--accent); }
-.act-btn svg { width: 11px; height: 11px; }
-/* delete confirm */
-.confirm-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,.7);
-  display: flex; align-items: center; justify-content: center; z-index: 60;
-  opacity: 0; pointer-events: none; transition: opacity .15s;
-}
-.confirm-backdrop.open { opacity: 1; pointer-events: all; }
-.confirm-box {
-  background: var(--bg2); border: 1px solid var(--border2); border-radius: 2px;
-  padding: 24px 28px; width: 300px; max-width: 95vw;
-  transform: translateY(8px); transition: transform .15s;
-}
-.confirm-backdrop.open .confirm-box { transform: translateY(0); }
-.confirm-msg { font-size: 13px; color: var(--text); margin-bottom: 18px; line-height: 1.5; }
-.confirm-msg strong { color: var(--accent); }
-.confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.btn-del-confirm {
-  padding: 7px 16px; background: var(--red); border: 1px solid var(--red);
-  border-radius: 2px; color: #fff; font-family: var(--mono); font-size: 11px;
-  letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: opacity .15s;
-}
-.btn-del-confirm:hover { opacity: .85; }
+.empty{padding:60px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px}
+.loading{padding:60px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
 
-/* empty state */
-.empty { padding: 60px; text-align: center; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-backdrop.open{opacity:1;pointer-events:all}
+.modal{width:440px;max-width:95vw;max-height:90vh;overflow-y:auto;background:var(--bg2);border:1px solid var(--border2);border-radius:2px;padding:28px 28px 24px;transform:translateY(12px);transition:transform .2s}
+.modal-backdrop.open .modal{transform:translateY(0)}
+.modal-title{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:20px}
+.form-row{margin-bottom:13px}
+.form-label{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:5px}
+.form-row input,.form-row select,.form-row textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;transition:border-color .15s}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--accent)}
+.form-row textarea{resize:vertical;min-height:68px}
+.prio-select{display:flex;gap:8px}
+.prio-opt{flex:1;padding:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;cursor:pointer;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted);transition:all .15s}
+.prio-opt:hover{color:var(--text)}
+.prio-opt.sel-alta{border-color:var(--red);color:var(--red);background:#1a0a0a}
+.prio-opt.sel-baixa{border-color:var(--muted2);color:var(--muted2)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.btn-cancel{padding:8px 16px;background:none;border:1px solid var(--border2);border-radius:2px;color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.btn-cancel:hover{color:var(--text);border-color:var(--muted)}
+.btn-save{padding:8px 16px;background:var(--accent);border:1px solid var(--accent);border-radius:2px;color:#0f0f0f;font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-weight:500;transition:background .15s}
+.btn-save:hover{background:var(--accent2)}
 
-/* ── MODAL ── */
-.modal-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,.7);
-  display: flex; align-items: center; justify-content: center; z-index: 50;
-  opacity: 0; pointer-events: none; transition: opacity .2s;
-}
-.modal-backdrop.open { opacity: 1; pointer-events: all; }
-.modal {
-  width: 420px; max-width: 95vw;
-  background: var(--bg2); border: 1px solid var(--border2); border-radius: 2px;
-  padding: 28px 28px 24px;
-  transform: translateY(12px); transition: transform .2s;
-}
-.modal-backdrop.open .modal { transform: translateY(0); }
-.modal-title {
-  font-family: var(--mono); font-size: 11px; letter-spacing: 2px;
-  color: var(--muted2); text-transform: uppercase; margin-bottom: 20px;
-}
-.form-row { margin-bottom: 14px; }
-.form-label {
-  font-family: var(--mono); font-size: 10px; letter-spacing: 1px;
-  color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 5px;
-}
-.form-row input, .form-row select {
-  width: 100%; background: var(--bg3); border: 1px solid var(--border2);
-  border-radius: 2px; padding: 9px 12px; color: var(--text);
-  font-family: var(--sans); font-size: 13px; outline: none;
-  transition: border-color .15s;
-}
-.form-row input:focus, .form-row select:focus { border-color: var(--accent); }
-.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
-.btn-cancel {
-  padding: 8px 18px; background: none;
-  border: 1px solid var(--border2); border-radius: 2px;
-  color: var(--muted); font-family: var(--mono); font-size: 11px;
-  letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
-  transition: all .15s;
-}
-.btn-cancel:hover { color: var(--text); border-color: var(--muted); }
-.btn-save {
-  padding: 8px 18px; background: var(--accent);
-  border: 1px solid var(--accent); border-radius: 2px;
-  color: #0f0f0f; font-family: var(--mono); font-size: 11px;
-  letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
-  font-weight: 500; transition: background .15s;
-}
-.btn-save:hover { background: var(--accent2); border-color: var(--accent2); }
+/* confirm */
+.confirm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;z-index:60;opacity:0;pointer-events:none;transition:opacity .15s}
+.confirm-backdrop.open{opacity:1;pointer-events:all}
+.confirm-box{background:var(--bg2);border:1px solid var(--border2);border-radius:2px;padding:24px 28px;width:300px;max-width:95vw;transform:translateY(8px);transition:transform .15s}
+.confirm-backdrop.open .confirm-box{transform:translateY(0)}
+.confirm-msg{font-size:13px;color:var(--text);margin-bottom:18px;line-height:1.5}
+.confirm-msg strong{color:var(--accent)}
+.confirm-actions{display:flex;gap:8px;justify-content:flex-end}
+.btn-del{padding:7px 16px;background:var(--red);border:1px solid var(--red);border-radius:2px;color:#fff;font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:opacity .15s}
+.btn-del:hover{opacity:.85}
 
-/* scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">dot <span>/</span> tasks</div>
@@ -274,30 +177,33 @@ tbody tr:hover .act-btn { opacity: 1; }
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="topbar">
     <div class="logo">dot <span>/</span> tasks</div>
-    <button class="add-btn" onclick="openModal()" title="nova tarefa">+</button>
+    <div class="topbar-right">
+      <span class="sync-status" id="sync-status">conectando...</span>
+      <button class="add-btn" onclick="openModal()" title="nova tarefa">+</button>
+    </div>
   </div>
   <div class="filterbar">
     <span class="filter-label">filtrar</span>
     <select id="f-resp" onchange="render()">
       <option value="">responsável</option>
-      <option>Ramiro</option>
-      <option>Vinícius</option>
+      <option>Ramiro</option><option>Vinícius</option><option>Felipe</option><option>Manu</option><option>Mauricio</option>
     </select>
     <select id="f-client" onchange="render()">
       <option value="">cliente</option>
-      <option>141</option><option>BECKENBAUER</option><option>NE</option>
-      <option>PLAY</option><option>PUSKAS</option><option>RAND</option>
-      <option>SATOSHI</option><option>SINATRA</option><option>STOCK</option>
+      <option>141</option><option>BECKENBAUER</option><option>NE</option><option>PLAY</option><option>PUSKAS</option>
+      <option>RAND</option><option>SATOSHI</option><option>SINATRA</option><option>STOCK</option>
       <option>SWITCH</option><option>TRADE</option><option>VITO</option>
     </select>
     <select id="f-cat" onchange="render()">
       <option value="">categoria</option>
-      <option>Atendimento</option><option>Family Office</option>
-      <option>Investments</option><option>Onboarding</option><option>Portfólio</option>
+      <option>Atendimento</option><option>Family Office</option><option>Investments</option><option>Onboarding</option><option>Portfólio</option>
+    </select>
+    <select id="f-prio" onchange="render()">
+      <option value="">prioridade</option>
+      <option value="sim">! prioritária</option>
     </select>
     <select id="f-feito" onchange="render()">
       <option value="">todas</option>
@@ -311,24 +217,26 @@ tbody tr:hover .act-btn { opacity: 1; }
     <table>
       <thead>
         <tr>
-          <th>prazo</th>
-          <th>tarefa / descrição</th>
-          <th>cliente</th>
-          <th>categoria</th>
-          <th>responsável</th>
-          <th>feito</th>
-          <th>concluído em</th>
-          <th></th>
+          <th class="th-prazo" onclick="sortBy('prazo')">prazo</th>
+          <th class="th-task" onclick="sortBy('task')">tarefa / descrição</th>
+          <th class="th-prio">!</th>
+          <th class="th-client" onclick="sortBy('cliente')">cliente</th>
+          <th class="th-cat" onclick="sortBy('categoria')">categoria</th>
+          <th class="th-resp" onclick="sortBy('responsavel')">responsável</th>
+          <th class="th-done">feito</th>
+          <th class="th-date">concluído em</th>
+          <th class="th-act"></th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
     </table>
+    <div class="loading" id="loading">carregando tasks...</div>
     <div class="empty" id="empty" style="display:none">nenhuma tarefa encontrada</div>
   </div>
 </div>
 
-<!-- MODAL -->
-<div class="modal-backdrop" id="modal-backdrop" onclick="maybeCloseModal(event)">
+<!-- modal nova/editar -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="maybeClose(event,'modal-backdrop')">
   <div class="modal">
     <div class="modal-title" id="modal-title">nova tarefa</div>
     <div class="form-row">
@@ -341,15 +249,21 @@ tbody tr:hover .act-btn { opacity: 1; }
     </div>
     <div class="form-row">
       <label class="form-label">descrição <span style="color:var(--muted);font-size:9px;letter-spacing:0">(opcional)</span></label>
-      <textarea id="f-desc" placeholder="como fazer, contexto, links..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;resize:vertical;min-height:72px;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"></textarea>
+      <textarea id="f-desc" placeholder="contexto, como fazer, links..."></textarea>
+    </div>
+    <div class="form-row">
+      <label class="form-label">prioridade</label>
+      <div class="prio-select">
+        <div class="prio-opt" id="po-sim" onclick="setPrio('sim')" style="color:var(--red)">! prioritária</div>
+        <div class="prio-opt" id="po-nao" onclick="setPrio(null)">— sem prioridade</div>
+      </div>
     </div>
     <div class="form-row">
       <label class="form-label">cliente</label>
       <select id="f-new-client">
         <option value="">selecione</option>
-        <option>141</option><option>BECKENBAUER</option><option>NE</option>
-        <option>PLAY</option><option>PUSKAS</option><option>RAND</option>
-        <option>SATOSHI</option><option>SINATRA</option><option>STOCK</option>
+        <option>141</option><option>BECKENBAUER</option><option>NE</option><option>PLAY</option><option>PUSKAS</option>
+        <option>RAND</option><option>SATOSHI</option><option>SINATRA</option><option>STOCK</option>
         <option>SWITCH</option><option>TRADE</option><option>VITO</option>
       </select>
     </div>
@@ -357,15 +271,14 @@ tbody tr:hover .act-btn { opacity: 1; }
       <label class="form-label">categoria</label>
       <select id="f-new-cat">
         <option value="">selecione</option>
-        <option>Atendimento</option><option>Family Office</option>
-        <option>Investments</option><option>Onboarding</option><option>Portfólio</option>
+        <option>Atendimento</option><option>Family Office</option><option>Investments</option><option>Onboarding</option><option>Portfólio</option>
       </select>
     </div>
     <div class="form-row">
       <label class="form-label">responsável</label>
       <select id="f-new-resp">
         <option value="">selecione</option>
-        <option>Ramiro</option><option>Vinícius</option>
+        <option>Ramiro</option><option>Vinícius</option><option>Felipe</option><option>Manu</option><option>Mauricio</option>
       </select>
     </div>
     <div class="modal-actions">
@@ -375,183 +288,209 @@ tbody tr:hover .act-btn { opacity: 1; }
   </div>
 </div>
 
-<!-- CONFIRM DELETE -->
-<div class="confirm-backdrop" id="confirm-backdrop" onclick="maybeCloseConfirm(event)">
+<!-- confirm delete -->
+<div class="confirm-backdrop" id="confirm-backdrop" onclick="maybeClose(event,'confirm-backdrop')">
   <div class="confirm-box">
     <div class="confirm-msg" id="confirm-msg">Excluir esta tarefa?</div>
     <div class="confirm-actions">
       <button class="btn-cancel" onclick="closeConfirm()">cancelar</button>
-      <button class="btn-del-confirm" onclick="doDelete()">excluir</button>
+      <button class="btn-del" onclick="doDelete()">excluir</button>
     </div>
   </div>
 </div>
 
 <script>
+// ── CONFIGURAÇÃO SUPABASE ─────────────────────────────────────────
+// Substitua os valores abaixo após criar seu projeto no Supabase
+const SUPABASE_URL  = https://qzjlyhnseqhkbhalesgm.supabase.co/rest/v1/;
+const SUPABASE_KEY  = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6amx5aG5zZXFoa2JoYWxlc2dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwODc0MDEsImV4cCI6MjA5MzY2MzQwMX0.G-o2BGpn589-o0x7nyKL5yReWA0Q7BSnK8ZDAYq4pUg;
+// ─────────────────────────────────────────────────────────────────
+
 const SENHA = 'TasksDoT';
-const STORAGE_KEY = 'dot_tasks_v1';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── auth ──────────────────────────────────────────────────────────
 function doLogin() {
-  const val = document.getElementById('pwd-input').value;
-  if (val === SENHA) {
+  if (document.getElementById('pwd-input').value === SENHA) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').classList.add('visible');
-    render();
+    loadTasks();
+    subscribeRealtime();
   } else {
-    document.getElementById('login-err').classList.add('show');
+    const e = document.getElementById('login-err');
+    e.classList.add('show');
     document.getElementById('pwd-input').value = '';
-    setTimeout(() => document.getElementById('login-err').classList.remove('show'), 2000);
+    setTimeout(() => e.classList.remove('show'), 2000);
   }
 }
 
 // ── data ──────────────────────────────────────────────────────────
-const SEED = [{"id": 2, "prazo": "2026-03-31", "task": "Contrato de Gestão", "cliente": "141", "categoria": "Onboarding", "responsavel": "Manu", "feito": false}, {"id": 3, "prazo": "2026-04-13", "task": "Follow up Fabi corretoras - PSF", "cliente": "VITO", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": true}, {"id": 4, "prazo": "2026-04-14", "task": "Definição da alocação Onshore", "cliente": "VITO", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": true}, {"id": 5, "prazo": "2026-04-14", "task": "volume dos fundos que queremos ter acesso", "cliente": "VITO", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": true}, {"id": 6, "prazo": "2026-04-14", "task": "Reunião sobre alocação", "cliente": "VITO", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": true}, {"id": 7, "prazo": "2026-04-15", "task": "Falar com Francisco sobre Acesso Johan", "cliente": "PUSKAS", "categoria": "Onboarding", "responsavel": "Ramiro", "feito": true}, {"id": 8, "prazo": "2026-04-15", "task": "Definir alocação DI Flávia", "cliente": "STOCK", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 9, "prazo": "2026-04-15", "task": "Pagamento declaração quinquenal", "cliente": "SATOSHI", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 10, "prazo": "2026-04-17", "task": "Cadastro Investidor QiTECH", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Vinícius", "feito": true}, {"id": 11, "prazo": "2026-04-17", "task": "Pachama", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Vinícius", "feito": true}, {"id": 12, "prazo": "2026-04-17", "task": "Nord", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Vinícius", "feito": true}, {"id": 13, "prazo": "2026-04-17", "task": "Financiamento Volpi", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Vinícius", "feito": true}, {"id": 14, "prazo": "2026-04-17", "task": "Cotar trabalho com Joana / Bel", "cliente": "141", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 15, "prazo": "2026-04-17", "task": "Auxiliar advogados DIRPF 2026", "cliente": "STOCK", "categoria": "Family Office", "responsavel": "Ramiro", "feito": true}, {"id": 16, "prazo": "2026-04-17", "task": "Criar apresentação sobre portólio", "cliente": "BECKENBAUER", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 17, "prazo": "2026-04-17", "task": "Previdência  registrar a Flávia como beneficiária", "cliente": "STOCK", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 18, "prazo": "2026-04-17", "task": "Envio fatura 1Q 2026", "cliente": "SINATRA", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": true}, {"id": 19, "prazo": "2026-04-17", "task": "Enviar fatura 1Q 2026 (desde dez/25)", "cliente": "STOCK", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 20, "prazo": "2026-04-17", "task": "Envio fatura 1Q 2026", "cliente": "NE", "categoria": "Atendimento", "responsavel": "Felipe", "feito": false}, {"id": 21, "prazo": "2026-04-22", "task": "Hognis", "cliente": "SATOSHI", "categoria": "", "responsavel": "", "feito": false}, {"id": 22, "prazo": "2026-04-22", "task": "D1 capital partners - Kulic", "cliente": "PUSKAS", "categoria": "", "responsavel": "", "feito": false}, {"id": 23, "prazo": "2026-04-22", "task": "Envio fatura 1Q 2026", "cliente": "SATOSHI", "categoria": "Atendimento", "responsavel": "", "feito": false}, {"id": 24, "prazo": "2026-04-22", "task": "Cobrar fatura Q4 2025 / Q1 2026", "cliente": "PUSKAS", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 25, "prazo": "2026-04-22", "task": "Envio fatura 1Q 2026", "cliente": "141", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 26, "prazo": "2026-04-23", "task": "Entender ajuda Entidade PTET", "cliente": "SINATRA", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 28, "prazo": "2026-04-28", "task": "Mapa de ativos", "cliente": "BECKENBAUER", "categoria": "", "responsavel": "Ramiro", "feito": false}, {"id": 29, "prazo": "2026-04-29", "task": "Hogni I FL - estudo sobre refinancing", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 30, "prazo": "2026-04-29", "task": "Imóvel PJM + Barão (financiamento e liquidez)", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 31, "prazo": "2026-04-29", "task": "Estudo Imovel Aspen x Venda portfolio atual + panorama Liquidez Partrimonio", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 32, "prazo": "2026-04-29", "task": "Executar venda secundário Revolut", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 33, "prazo": "2026-04-29", "task": "Preencher formulários LLCs", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 34, "prazo": "2026-04-29", "task": "DIRPF'", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 35, "prazo": "2026-04-29", "task": "Gestão Liquidez contas Offshore", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 36, "prazo": "2026-04-29", "task": "Revisão do Plano Sucessório - Camila", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 37, "prazo": "2026-04-29", "task": "Conversa sobre Investimentos Pershing Geraldine", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 38, "prazo": "2026-04-29", "task": "Preencher ES / FAR Pitanga - Kishikan - GE32", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Vinícius", "feito": false}, {"id": 39, "prazo": "2026-04-30", "task": "Ficha Cadastral 5 Vitos", "cliente": "VITO", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 40, "prazo": "2026-04-30", "task": "Liberar acessos bancos (JP & MS)", "cliente": "PUSKAS", "categoria": "Onboarding", "responsavel": "Ramiro", "feito": false}, {"id": 41, "prazo": "2026-04-30", "task": "Assinar contrato de gestão", "cliente": "RAND", "categoria": "Onboarding", "responsavel": "Ramiro", "feito": false}, {"id": 42, "prazo": "2026-04-30", "task": "Preparar contrato de gestão", "cliente": "BECKENBAUER", "categoria": "Onboarding", "responsavel": "Ramiro", "feito": false}, {"id": 43, "prazo": "2026-04-30", "task": "Ficha Cadastral", "cliente": "PLAY", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 44, "prazo": "2026-04-30", "task": "Assinar Ficha Cadastral", "cliente": "TRADE", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 45, "prazo": "2026-04-30", "task": "Assinar Ficha Cadastral", "cliente": "SWITCH", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 46, "prazo": "2026-04-30", "task": "Assinar Ficha Cadastral", "cliente": "NE", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 47, "prazo": "2026-04-30", "task": "Contrato de Gestão Nelson / Maropar", "cliente": "VITO", "categoria": "Onboarding", "responsavel": "Manu", "feito": false}, {"id": 48, "prazo": "2026-04-30", "task": "Ficha Cadastral", "cliente": "BECKENBAUER", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 49, "prazo": "2026-04-30", "task": "leAD - tocar projeto", "cliente": "VITO", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 50, "prazo": "2026-04-30", "task": "Investimento D1 Private Fund", "cliente": "PUSKAS", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 51, "prazo": "2026-04-30", "task": "Acesso  Holdings Real Estate", "cliente": "RAND", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 52, "prazo": "2026-04-30", "task": "Criar acesso + FTP Santander", "cliente": "BECKENBAUER", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 53, "prazo": "2026-04-30", "task": "Illíquidos - Preparar visão consolidada", "cliente": "STOCK", "categoria": "Investments", "responsavel": "Vinícius", "feito": false}, {"id": 54, "prazo": "2026-04-30", "task": "Auxiliar processo compra Imovel", "cliente": "PLAY", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 55, "prazo": "2026-04-30", "task": "abertura da conta no Morgan Stanley", "cliente": "TRADE", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 56, "prazo": "2026-04-30", "task": "abertura da conta no Morgan Stanley", "cliente": "SWITCH", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 57, "prazo": "2026-04-30", "task": "CRS/FATCA Form for Kulic Holdings Ltd", "cliente": "PUSKAS", "categoria": "Investments", "responsavel": "Vinícius", "feito": false}, {"id": 58, "prazo": "2026-04-30", "task": "NPV DST delaware franchise tax", "cliente": "PUSKAS", "categoria": "Investments", "responsavel": "Vinícius", "feito": false}, {"id": 59, "prazo": "2026-04-30", "task": "Checar acessos fundos VC", "cliente": "RAND", "categoria": "Investments", "responsavel": "Vinícius", "feito": false}, {"id": 60, "prazo": "2026-04-30", "task": "Criar acesso + FTP ITAU", "cliente": "BECKENBAUER", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 61, "prazo": "2026-04-30", "task": "Inicio gestão carteira XP", "cliente": "TRADE", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 62, "prazo": "2026-04-30", "task": "Inicio gestão carteira XP", "cliente": "SWITCH", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 63, "prazo": "2026-04-30", "task": "Divida BTG - VTAL", "cliente": "PUSKAS", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 64, "prazo": "2026-04-30", "task": "Criar acesso + FTP XP", "cliente": "BECKENBAUER", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 65, "prazo": "2026-04-30", "task": "Kulic - BTG Cayman", "cliente": "PUSKAS", "categoria": "Investments", "responsavel": "Vinícius", "feito": false}, {"id": 66, "prazo": "2026-04-30", "task": "Criar acesso + FTP Morgan Stanley", "cliente": "BECKENBAUER", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 67, "prazo": "2026-04-30", "task": "Histórico Contábil REORG", "cliente": "VITO", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 68, "prazo": "2026-04-30", "task": "Auxiliar planejamento Fiscal Brasil e BVI", "cliente": "PLAY", "categoria": "Family Office", "responsavel": "Felipe", "feito": false}, {"id": 69, "prazo": "2026-04-30", "task": "Auxilio na DIRPF", "cliente": "TRADE", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 70, "prazo": "2026-04-30", "task": "Auxilio na DIRPF", "cliente": "SWITCH", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 71, "prazo": "2026-04-30", "task": "Após checkpoint, definir Advogado", "cliente": "141", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 72, "prazo": "2026-04-30", "task": "Reunião com Bel Calich", "cliente": "TRADE", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 73, "prazo": "2026-04-30", "task": "Reunião com Bel Calich", "cliente": "SWITCH", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 74, "prazo": "2026-04-30", "task": "Estudo Vinyard (early managers)", "cliente": "SATOSHI", "categoria": "Portfólio", "responsavel": "Felipe", "feito": false}, {"id": 75, "prazo": "2026-04-30", "task": "Acompanhar resgates fundos Equities", "cliente": "141", "categoria": "Portfólio", "responsavel": "Vinícius", "feito": false}, {"id": 76, "prazo": "2026-04-30", "task": "Montar portfólio DOT ON e OFF", "cliente": "TRADE", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 77, "prazo": "2026-04-30", "task": "Montar portfólio DOT ON e OFF", "cliente": "SWITCH", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 78, "prazo": "2026-04-30", "task": "Acompanhar portfólio DOT", "cliente": "NE", "categoria": "Portfólio", "responsavel": "Felipe", "feito": false}, {"id": 79, "prazo": "2026-04-30", "task": "Definição Clube Raiz", "cliente": "VITO", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 80, "prazo": "2026-04-30", "task": "Acompanhar enquadramento fundo", "cliente": "141", "categoria": "Portfólio", "responsavel": "Vinícius", "feito": false}, {"id": 81, "prazo": "2026-04-30", "task": "Marcar Checkpoint após report", "cliente": "141", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 82, "prazo": "2026-04-30", "task": "Acertar dinâmica de serviço - valor mínimo", "cliente": "PLAY", "categoria": "Atendimento", "responsavel": "Felipe", "feito": false}, {"id": 83, "prazo": "2026-04-30", "task": "Marcar nova reunião de trabalho abr26?", "cliente": "TRADE", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 84, "prazo": "2026-04-30", "task": "Marcar nova reunião de trabalho abr26?", "cliente": "SWITCH", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 85, "prazo": "2026-05-30", "task": "Enviar fatura 2026", "cliente": "RAND", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 86, "prazo": "2026-06-30", "task": "Abertura conta Morgan Stanley / BTG", "cliente": "141", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 87, "prazo": "2026-06-30", "task": "Realizar Diagnóstico Sucessório?", "cliente": "VITO", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 88, "prazo": "2026-06-30", "task": "Plano Plurianual", "cliente": "BECKENBAUER", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 89, "prazo": "2026-07-31", "task": "Enviar 1ª parcela Fatura", "cliente": "BECKENBAUER", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 91, "prazo": "", "task": "Contabilidade BVIs?", "cliente": "PUSKAS", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 92, "prazo": "", "task": "Declaração IR?", "cliente": "PUSKAS", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 93, "prazo": "", "task": "Mortgage US", "cliente": "PUSKAS", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 94, "prazo": "", "task": "Invoice", "cliente": "SATOSHI", "categoria": "Atendimento", "responsavel": "", "feito": false}];
+let tasks = [];
 
-function loadTasks() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
-  } catch(e) {}
-  return JSON.parse(JSON.stringify(SEED));
+async function loadTasks() {
+  setSyncStatus('carregando...', '');
+  const { data, error } = await db.from('tasks').select('*').order('prazo', { ascending: true, nullsFirst: false });
+  if (error) { setSyncStatus('erro ao carregar', 'err'); return; }
+  tasks = data || [];
+  document.getElementById('loading').style.display = 'none';
+  setSyncStatus('● online', 'ok');
+  render();
 }
 
-function saveTasks(tasks) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+async function insertTask(payload) {
+  const { data, error } = await db.from('tasks').insert([payload]).select().single();
+  if (error) { alert('Erro ao salvar: ' + error.message); return null; }
+  return data;
 }
 
-let tasks = loadTasks();
-let nextId = Math.max(...tasks.map(t => t.id)) + 1;
+async function updateTask(id, fields) {
+  const { error } = await db.from('tasks').update(fields).eq('id', id);
+  if (error) console.error('Erro ao atualizar:', error.message);
+}
+
+async function deleteTask(id) {
+  const { error } = await db.from('tasks').delete().eq('id', id);
+  if (error) { alert('Erro ao excluir: ' + error.message); return false; }
+  return true;
+}
+
+// ── realtime sync ─────────────────────────────────────────────────
+function subscribeRealtime() {
+  db.channel('tasks-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, payload => {
+      if (payload.eventType === 'INSERT') {
+        if (!tasks.find(t => t.id === payload.new.id)) tasks.push(payload.new);
+      } else if (payload.eventType === 'UPDATE') {
+        tasks = tasks.map(t => t.id === payload.new.id ? payload.new : t);
+      } else if (payload.eventType === 'DELETE') {
+        tasks = tasks.filter(t => t.id !== payload.old.id);
+      }
+      render();
+    })
+    .subscribe();
+}
+
+function setSyncStatus(msg, cls) {
+  const el = document.getElementById('sync-status');
+  el.textContent = msg;
+  el.className = 'sync-status ' + cls;
+}
 
 // ── urgency ───────────────────────────────────────────────────────
-function todayStr() {
-  return new Date().toISOString().split('T')[0];
-}
-
-function urgClass(prazo) {
-  if (!prazo) return 'sem';
-  const today = todayStr();
-  const diff = Math.round((new Date(prazo+'T12:00:00') - new Date(today+'T00:00:00')) / 86400000);
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function urgClass(p) {
+  if (!p) return 'sem';
+  const diff = Math.round((new Date(p + 'T12:00:00') - new Date(todayStr() + 'T00:00:00')) / 86400000);
   if (diff < 0) return 'vencida';
   if (diff === 0) return 'hoje';
   if (diff <= 7) return 'semana';
   return 'normal';
 }
+function fmtDate(d) { if (!d) return '—'; const [y, m, v] = d.split('-'); return `${v}/${m}/${y}`; }
 
-function urgOrder(prazo) {
-  if (!prazo) return '9999-99-99';
-  return prazo;
-}
-
-function fmtPrazo(prazo) {
-  if (!prazo) return '—';
-  const [y,m,d] = prazo.split('-');
-  return `${d}/${m}/${y}`;
+// ── sort ──────────────────────────────────────────────────────────
+let sortCol = null, sortDir = 1;
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+  const map = { prazo: 'th-prazo', task: 'th-task', cliente: 'th-client', categoria: 'th-cat', responsavel: 'th-resp' };
+  if (map[col]) { const th = document.querySelector('.' + map[col]); if (th) th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc'); }
+  render();
 }
 
 // ── render ────────────────────────────────────────────────────────
-function getFilters() {
-  return {
-    resp:   document.getElementById('f-resp').value,
-    client: document.getElementById('f-client').value,
-    cat:    document.getElementById('f-cat').value,
-    feito:  document.getElementById('f-feito').value,
-  };
-}
-
 function render() {
-  const f = getFilters();
-  let list = tasks.filter(t => {
-    if (f.resp   && t.responsavel !== f.resp)   return false;
-    if (f.client && t.cliente !== f.client)      return false;
-    if (f.cat    && t.categoria !== f.cat)       return false;
-    if (f.feito === 'pendente' && t.feito)       return false;
-    if (f.feito === 'feito'   && !t.feito)       return false;
-    return true;
-  });
+  const fR = document.getElementById('f-resp').value;
+  const fC = document.getElementById('f-client').value;
+  const fCat = document.getElementById('f-cat').value;
+  const fP = document.getElementById('f-prio').value;
+  const fF = document.getElementById('f-feito').value;
 
-  // sort by urgency then prazo
-  const urgPriority = { vencida: 0, hoje: 1, semana: 2, normal: 3, sem: 4 };
-  list.sort((a, b) => {
-    const ua = urgPriority[urgClass(a.prazo)];
-    const ub = urgPriority[urgClass(b.prazo)];
-    if (ua !== ub) return ua - ub;
-    return urgOrder(a.prazo).localeCompare(urgOrder(b.prazo));
-  });
+  let list = tasks.filter(t =>
+    (!fR || t.responsavel === fR) &&
+    (!fC || t.cliente === fC) &&
+    (!fCat || t.categoria === fCat) &&
+    (!fP || (fP === 'sim' ? t.prioridade === 'sim' : true)) &&
+    (fF === 'pendente' ? !t.feito : fF === 'feito' ? t.feito : true)
+  );
 
-  const tbody = document.getElementById('tbody');
-  const empty = document.getElementById('empty');
-  document.getElementById('task-count').textContent = list.length + ' tarefa' + (list.length !== 1 ? 's' : '');
-
-  if (!list.length) {
-    tbody.innerHTML = '';
-    empty.style.display = '';
-    return;
+  const uP = { vencida: 0, hoje: 1, semana: 2, normal: 3, sem: 4 };
+  if (sortCol) {
+    list.sort((a, b) => { let va = a[sortCol] || '', vb = b[sortCol] || ''; return va < vb ? -sortDir : va > vb ? sortDir : 0; });
+  } else {
+    list.sort((a, b) => {
+      const ua = uP[urgClass(a.prazo)], ub = uP[urgClass(b.prazo)];
+      if (ua !== ub) return ua - ub;
+      const pa = a.prioridade === 'sim' ? 0 : 1, pb = b.prioridade === 'sim' ? 0 : 1;
+      if (pa !== pb) return pa - pb;
+      return (a.prazo || '9999') > (b.prazo || '9999') ? 1 : -1;
+    });
   }
+
+  document.getElementById('task-count').textContent = list.length + ' tarefa' + (list.length !== 1 ? 's' : '');
+  const empty = document.getElementById('empty'), tbody = document.getElementById('tbody');
+  if (!list.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
   empty.style.display = 'none';
+
+  const dC = { vencida: '#ff5f57', hoje: '#ffbe2e', semana: '#c8f06e', normal: '#252525', sem: '#1e1e1e' };
 
   tbody.innerHTML = list.map(t => {
     const urg = urgClass(t.prazo);
-    const dotColor = urg === 'vencida' ? '#ff5f57' : urg === 'hoje' ? '#ffbe2e' : urg === 'semana' ? '#c8f06e' : '#333';
-    const prazoClass = `prazo-${urg}`;
-    const respDisplay = t.responsavel || '—';
-    const respClass = t.responsavel ? 'badge-resp' : 'badge-sem';
-    return `
-      <tr class="${t.feito ? 'done' : ''}" data-id="${t.id}">
-        <td class="td-prazo">
-          <span class="urg-dot" style="background:${dotColor}"></span>
-          <span class="${prazoClass}">${fmtPrazo(t.prazo)}</span>
-        </td>
-        <td class="desc-cell"><span class="task-name">${escHtml(t.task)}</span>${t.descricao ? `<div class="desc-text">${escHtml(t.descricao)}</div>` : ''}</td>
-        <td><span class="badge badge-cliente">${escHtml(t.cliente)}</span></td>
-        <td><span class="badge badge-cat">${escHtml(t.categoria)}</span></td>
-        <td><span class="badge ${respClass}">${escHtml(respDisplay)}</span></td>
-        <td class="td-done">
-          <button class="done-btn ${t.feito ? 'checked' : ''}" onclick="toggleDone(${t.id})" title="marcar como feita">
-            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="2,6 5,9 10,3"/>
-            </svg>
-          </button>
-        </td>
-        <td style="text-align:center">${t.feito && t.concluidoEm ? `<span class="concluido-date">${fmtPrazo(t.concluidoEm)}</span>` : '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
-        <td class="td-actions">
-          <button class="act-btn edit" onclick="openEdit(${t.id})" title="editar">
-            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8.5 1.5l2 2L3 11H1V9L8.5 1.5z"/>
-            </svg>
-          </button>
-          <button class="act-btn del" onclick="confirmDelete(${t.id})" title="excluir">
-            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/>
-            </svg>
-          </button>
-        </td>
-      </tr>`;
+    const resp = t.responsavel || '—';
+    const rCls = t.responsavel ? 'badge-resp' : 'badge-sem';
+    const concluidoEm = t.concluidoem || t.concluidoEm || null;
+    return `<tr class="${t.feito ? 'done' : ''}">
+      <td class="td-prazo"><div class="prazo-wrap"><span class="urg-dot" style="background:${dC[urg]}"></span><span class="prazo-txt prazo-${urg}">${fmtDate(t.prazo)}</span></div></td>
+      <td class="td-task"><span class="task-name">${esc(t.task)}</span>${t.descricao ? `<div class="desc-text">${esc(t.descricao)}</div>` : ''}</td>
+      <td class="td-prio"><button class="prio-btn ${t.prioridade === 'sim' ? 'sim' : ''}" onclick="togglePrio(${t.id})" title="${t.prioridade === 'sim' ? 'prioritária' : 'marcar como prioritária'}">${t.prioridade === 'sim' ? '!' : ''}</button></td>
+      <td class="td-client"><span class="badge badge-cliente">${esc(t.cliente)}</span></td>
+      <td class="td-cat"><span class="badge badge-cat">${esc(t.categoria || '—')}</span></td>
+      <td class="td-resp"><span class="badge ${rCls}">${esc(resp)}</span></td>
+      <td class="td-done"><button class="done-btn ${t.feito ? 'checked' : ''}" onclick="toggleDone(${t.id})"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg></button></td>
+      <td class="td-date">${t.feito && concluidoEm ? `<span class="concluido-date">${fmtDate(concluidoEm)}</span>` : '<span style="color:var(--muted);font-size:10px">—</span>'}</td>
+      <td class="td-act">
+        <button class="act-btn edit" onclick="openEdit(${t.id})" title="editar"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 1.5l2 2L3 11H1V9L8.5 1.5z"/></svg></button>
+        <button class="act-btn del" onclick="confirmDelete(${t.id})" title="excluir"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
+      </td></tr>`;
   }).join('');
 }
 
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+async function toggleDone(id) {
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  const feito = !t.feito;
+  const concluidoEm = feito ? todayStr() : null;
+  tasks = tasks.map(x => x.id === id ? { ...x, feito, concluidoem: concluidoEm } : x);
+  render();
+  await updateTask(id, { feito, concluidoem: concluidoEm });
 }
 
-function toggleDone(id) {
-  const t = tasks.find(x => x.id === id);
-  if (t) {
-    t.feito = !t.feito;
-    t.concluidoEm = t.feito ? todayStr() : null;
-    saveTasks(tasks); render();
-  }
+async function togglePrio(id) {
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  const prioridade = t.prioridade === 'sim' ? null : 'sim';
+  tasks = tasks.map(x => x.id === id ? { ...x, prioridade } : x);
+  render();
+  await updateTask(id, { prioridade });
 }
 
 function clearFilters() {
-  ['f-resp','f-client','f-cat','f-feito'].forEach(id => document.getElementById(id).value = '');
+  ['f-resp', 'f-client', 'f-cat', 'f-prio', 'f-feito'].forEach(id => document.getElementById(id).value = '');
   render();
 }
 
 // ── modal ─────────────────────────────────────────────────────────
-let editingId = null;
+let editingId = null, modalPrio = null;
+
+function setPrio(p) {
+  modalPrio = p;
+  document.getElementById('po-sim').className = 'prio-opt' + (modalPrio === 'sim' ? ' sel-alta' : '');
+  document.getElementById('po-nao').className = 'prio-opt' + (modalPrio === null ? ' sel-baixa' : '');
+}
 
 function openModal() {
-  editingId = null;
+  editingId = null; modalPrio = null;
   document.getElementById('modal-title').textContent = 'nova tarefa';
   document.getElementById('btn-save').textContent = 'adicionar';
   document.getElementById('f-prazo').value = todayStr();
@@ -560,94 +499,84 @@ function openModal() {
   document.getElementById('f-new-client').value = '';
   document.getElementById('f-new-cat').value = '';
   document.getElementById('f-new-resp').value = '';
+  document.getElementById('po-sim').className = 'prio-opt';
+  document.getElementById('po-nao').className = 'prio-opt';
   document.getElementById('modal-backdrop').classList.add('open');
   setTimeout(() => document.getElementById('f-task').focus(), 200);
 }
 
 function openEdit(id) {
-  const t = tasks.find(x => x.id === id);
-  if (!t) return;
-  editingId = id;
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  editingId = id; modalPrio = t.prioridade || null;
   document.getElementById('modal-title').textContent = 'editar tarefa';
   document.getElementById('btn-save').textContent = 'salvar';
   document.getElementById('f-prazo').value = t.prazo || '';
   document.getElementById('f-task').value = t.task;
   document.getElementById('f-desc').value = t.descricao || '';
   document.getElementById('f-new-client').value = t.cliente;
-  document.getElementById('f-new-cat').value = t.categoria;
-  document.getElementById('f-new-resp').value = t.responsavel;
+  document.getElementById('f-new-cat').value = t.categoria || '';
+  document.getElementById('f-new-resp').value = t.responsavel || '';
+  document.getElementById('po-sim').className = 'prio-opt' + (modalPrio === 'sim' ? ' sel-alta' : '');
+  document.getElementById('po-nao').className = 'prio-opt' + (modalPrio === null ? ' sel-baixa' : '');
   document.getElementById('modal-backdrop').classList.add('open');
   setTimeout(() => document.getElementById('f-task').focus(), 200);
 }
 
-function closeModal() {
-  document.getElementById('modal-backdrop').classList.remove('open');
-  editingId = null;
-}
+function closeModal() { document.getElementById('modal-backdrop').classList.remove('open'); editingId = null; }
 
-function maybeCloseModal(e) {
-  if (e.target === document.getElementById('modal-backdrop')) closeModal();
-}
-
-function saveTask() {
+async function saveTask() {
   const task = document.getElementById('f-task').value.trim();
   const cliente = document.getElementById('f-new-client').value;
   const categoria = document.getElementById('f-new-cat').value;
   const responsavel = document.getElementById('f-new-resp').value;
   const prazo = document.getElementById('f-prazo').value;
   const descricao = document.getElementById('f-desc').value.trim();
-  if (!task || !cliente || !categoria) {
-    document.getElementById('f-task').style.borderColor = task ? '' : '#ff5f57';
-    document.getElementById('f-new-client').style.borderColor = cliente ? '' : '#ff5f57';
-    document.getElementById('f-new-cat').style.borderColor = categoria ? '' : '#ff5f57';
+
+  if (!task || !cliente) {
+    document.getElementById('f-task').style.borderColor = task ? '' : 'var(--red)';
+    document.getElementById('f-new-client').style.borderColor = cliente ? '' : 'var(--red)';
     return;
   }
-  ['f-task','f-new-client','f-new-cat'].forEach(id => document.getElementById(id).style.borderColor = '');
+  ['f-task', 'f-new-client'].forEach(id => document.getElementById(id).style.borderColor = '');
+
+  const payload = { task, descricao, cliente, categoria, responsavel, prazo: prazo || null, prioridade: modalPrio, feito: false, concluidoem: null };
+
   if (editingId !== null) {
-    const t = tasks.find(x => x.id === editingId);
-    if (t) { t.prazo = prazo; t.task = task; t.descricao = descricao; t.cliente = cliente; t.categoria = categoria; t.responsavel = responsavel; }
+    tasks = tasks.map(x => x.id === editingId ? { ...x, ...payload } : x);
+    render();
+    await updateTask(editingId, payload);
   } else {
-    tasks.push({ id: nextId++, prazo, task, descricao, cliente, categoria, responsavel, feito: false, concluidoEm: null });
+    closeModal();
+    const created = await insertTask(payload);
+    if (created && !tasks.find(t => t.id === created.id)) {
+      tasks.push(created);
+      render();
+    }
   }
-  saveTasks(tasks);
   closeModal();
-  render();
 }
 
 // ── delete ────────────────────────────────────────────────────────
 let deleteId = null;
-
 function confirmDelete(id) {
-  const t = tasks.find(x => x.id === id);
-  if (!t) return;
+  const t = tasks.find(x => x.id === id); if (!t) return;
   deleteId = id;
-  document.getElementById('confirm-msg').innerHTML = `Excluir tarefa <strong>${escHtml(t.task)}</strong>?`;
+  document.getElementById('confirm-msg').innerHTML = `Excluir <strong>${esc(t.task)}</strong>?`;
   document.getElementById('confirm-backdrop').classList.add('open');
 }
-
-function closeConfirm() {
-  document.getElementById('confirm-backdrop').classList.remove('open');
-  deleteId = null;
-}
-
-function maybeCloseConfirm(e) {
-  if (e.target === document.getElementById('confirm-backdrop')) closeConfirm();
-}
-
-function doDelete() {
+function closeConfirm() { document.getElementById('confirm-backdrop').classList.remove('open'); deleteId = null; }
+async function doDelete() {
   if (deleteId === null) return;
-  tasks = tasks.filter(x => x.id !== deleteId);
-  saveTasks(tasks);
+  const ok = await deleteTask(deleteId);
+  if (ok) { tasks = tasks.filter(x => x.id !== deleteId); render(); }
   closeConfirm();
-  render();
 }
 
-// keyboard shortcuts
+function maybeClose(e, id) { if (e.target === document.getElementById(id)) { if (id === 'modal-backdrop') closeModal(); else closeConfirm(); } }
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeModal(); closeConfirm(); }
-  if (e.key === 'Enter' && document.getElementById('modal-backdrop').classList.contains('open')) {
-    if (document.activeElement.tagName !== 'BUTTON') saveTask();
-  }
+  if (e.key === 'Enter' && document.getElementById('modal-backdrop').classList.contains('open') && document.activeElement.tagName !== 'BUTTON' && document.activeElement.tagName !== 'TEXTAREA') saveTask();
 });
 </script>
 </body>
