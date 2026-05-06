@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tasks — DoT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0f;
+  --bg2: #161616;
+  --bg3: #1e1e1e;
+  --border: #2a2a2a;
+  --border2: #333;
+  --text: #e8e6e0;
+  --muted: #666;
+  --muted2: #888;
+  --accent: #c8f06e;
+  --accent2: #a8d050;
+  --red: #ff5f57;
+  --amber: #ffbe2e;
+  --green: #28ca41;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+
+/* ── LOGIN ── */
+#login-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.login-box {
+  width: 320px; padding: 40px 36px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 2px;
+}
+.login-logo {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 3px;
+  color: var(--muted2); text-transform: uppercase; margin-bottom: 32px;
+}
+.login-logo span { color: var(--accent); }
+.login-box input[type=password] {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 2px; padding: 10px 14px; color: var(--text);
+  font-family: var(--mono); font-size: 13px; outline: none;
+  transition: border-color .2s;
+}
+.login-box input[type=password]:focus { border-color: var(--accent); }
+.login-box button {
+  width: 100%; margin-top: 10px; padding: 10px;
+  background: var(--accent); color: #0f0f0f;
+  font-family: var(--mono); font-size: 12px; font-weight: 500;
+  letter-spacing: 1px; text-transform: uppercase;
+  border: none; border-radius: 2px; cursor: pointer;
+  transition: background .15s;
+}
+.login-box button:hover { background: var(--accent2); }
+.login-error {
+  font-size: 11px; color: var(--red); margin-top: 8px;
+  font-family: var(--mono); opacity: 0; transition: opacity .2s;
+}
+.login-error.show { opacity: 1; }
+
+/* ── MAIN ── */
+#app { display: none; flex-direction: column; height: 100vh; }
+#app.visible { display: flex; }
+
+/* topbar */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 52px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg); flex-shrink: 0;
+}
+.logo { font-family: var(--mono); font-size: 11px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+.logo span { color: var(--accent); }
+.add-btn {
+  width: 30px; height: 30px; border-radius: 2px;
+  background: var(--accent); color: #0f0f0f;
+  border: none; cursor: pointer; font-size: 20px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 300; transition: background .15s;
+}
+.add-btn:hover { background: var(--accent2); }
+
+/* filter bar */
+.filterbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 24px; border-bottom: 1px solid var(--border);
+  background: var(--bg); flex-shrink: 0; flex-wrap: wrap;
+}
+.filter-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+select {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 2px; color: var(--text); font-family: var(--mono);
+  font-size: 11px; padding: 5px 8px; outline: none; cursor: pointer;
+  transition: border-color .15s;
+}
+select:focus, select:hover { border-color: var(--border2); }
+.filter-clear {
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  background: none; border: 1px solid var(--border); border-radius: 2px;
+  padding: 5px 8px; cursor: pointer; letter-spacing: 0.5px;
+  transition: all .15s; margin-left: 4px;
+}
+.filter-clear:hover { color: var(--text); border-color: var(--border2); }
+.task-count { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-left: auto; }
+
+/* table */
+.table-wrap { flex: 1; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  padding: 10px 16px; text-align: left;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px;
+  color: var(--muted); text-transform: uppercase; font-weight: 400;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg); position: sticky; top: 0; z-index: 2;
+}
+thead th:last-child { text-align: center; }
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+tbody tr:hover { background: var(--bg2); }
+tbody tr.done { opacity: 0.4; }
+tbody tr.done .task-name { text-decoration: line-through; }
+
+td { padding: 11px 16px; vertical-align: middle; }
+
+.td-prazo { font-family: var(--mono); font-size: 12px; white-space: nowrap; min-width: 90px; }
+.prazo-vencida { color: var(--red); }
+.prazo-hoje    { color: var(--amber); }
+.prazo-semana  { color: var(--accent); }
+.prazo-normal  { color: var(--muted2); }
+.prazo-sem     { color: var(--muted); font-style: italic; }
+
+.urg-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 7px; vertical-align: middle; margin-bottom: 1px; }
+
+.task-name { font-size: 13px; color: var(--text); font-weight: 400; }
+
+.badge {
+  display: inline-block; font-family: var(--mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 2px; letter-spacing: 0.3px;
+}
+.badge-cliente   { background: #1a2a1a; color: #6db86d; border: 1px solid #2a3a2a; }
+.badge-cat       { background: var(--bg3); color: var(--muted2); border: 1px solid var(--border); }
+.badge-resp      { background: #1a1a2a; color: #7070cc; border: 1px solid #2a2a3a; }
+.badge-sem       { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); font-style: italic; }
+.concluido-date { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+/* desc tooltip */
+.desc-cell { max-width: 220px; }
+.desc-text { font-size: 11px; color: var(--muted2); margin-top: 3px; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* done toggle */
+td.td-done { text-align: center; }
+.done-btn {
+  width: 22px; height: 22px; border-radius: 2px;
+  border: 1px solid var(--border2); background: var(--bg3);
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  transition: all .15s; color: transparent;
+}
+.done-btn:hover { border-color: var(--accent); color: var(--accent); }
+.done-btn.checked { background: var(--accent); border-color: var(--accent); color: #0f0f0f; }
+.done-btn svg { width: 12px; height: 12px; }
+
+/* action buttons */
+td.td-actions { text-align: right; white-space: nowrap; width: 56px; }
+.act-btn {
+  width: 22px; height: 22px; border-radius: 2px;
+  border: 1px solid transparent; background: none;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  transition: all .15s; color: var(--muted); opacity: 0; vertical-align: middle;
+}
+tbody tr:hover .act-btn { opacity: 1; }
+.act-btn:hover { border-color: var(--border2); background: var(--bg3); }
+.act-btn.del:hover { color: var(--red); border-color: var(--red); }
+.act-btn.edit:hover { color: var(--accent); border-color: var(--accent); }
+.act-btn svg { width: 11px; height: 11px; }
+/* delete confirm */
+.confirm-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center; z-index: 60;
+  opacity: 0; pointer-events: none; transition: opacity .15s;
+}
+.confirm-backdrop.open { opacity: 1; pointer-events: all; }
+.confirm-box {
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: 2px;
+  padding: 24px 28px; width: 300px; max-width: 95vw;
+  transform: translateY(8px); transition: transform .15s;
+}
+.confirm-backdrop.open .confirm-box { transform: translateY(0); }
+.confirm-msg { font-size: 13px; color: var(--text); margin-bottom: 18px; line-height: 1.5; }
+.confirm-msg strong { color: var(--accent); }
+.confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-del-confirm {
+  padding: 7px 16px; background: var(--red); border: 1px solid var(--red);
+  border-radius: 2px; color: #fff; font-family: var(--mono); font-size: 11px;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: opacity .15s;
+}
+.btn-del-confirm:hover { opacity: .85; }
+
+/* empty state */
+.empty { padding: 60px; text-align: center; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+
+/* ── MODAL ── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center; z-index: 50;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.modal-backdrop.open { opacity: 1; pointer-events: all; }
+.modal {
+  width: 420px; max-width: 95vw;
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: 2px;
+  padding: 28px 28px 24px;
+  transform: translateY(12px); transition: transform .2s;
+}
+.modal-backdrop.open .modal { transform: translateY(0); }
+.modal-title {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 2px;
+  color: var(--muted2); text-transform: uppercase; margin-bottom: 20px;
+}
+.form-row { margin-bottom: 14px; }
+.form-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 1px;
+  color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 5px;
+}
+.form-row input, .form-row select {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 2px; padding: 9px 12px; color: var(--text);
+  font-family: var(--sans); font-size: 13px; outline: none;
+  transition: border-color .15s;
+}
+.form-row input:focus, .form-row select:focus { border-color: var(--accent); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.btn-cancel {
+  padding: 8px 18px; background: none;
+  border: 1px solid var(--border2); border-radius: 2px;
+  color: var(--muted); font-family: var(--mono); font-size: 11px;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+  transition: all .15s;
+}
+.btn-cancel:hover { color: var(--text); border-color: var(--muted); }
+.btn-save {
+  padding: 8px 18px; background: var(--accent);
+  border: 1px solid var(--accent); border-radius: 2px;
+  color: #0f0f0f; font-family: var(--mono); font-size: 11px;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+  font-weight: 500; transition: background .15s;
+}
+.btn-save:hover { background: var(--accent2); border-color: var(--accent2); }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">dot <span>/</span> tasks</div>
+    <input type="password" id="pwd-input" placeholder="senha" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">entrar</button>
+    <div class="login-error" id="login-err">senha incorreta</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="logo">dot <span>/</span> tasks</div>
+    <button class="add-btn" onclick="openModal()" title="nova tarefa">+</button>
+  </div>
+  <div class="filterbar">
+    <span class="filter-label">filtrar</span>
+    <select id="f-resp" onchange="render()">
+      <option value="">responsável</option>
+      <option>Ramiro</option>
+      <option>Vinícius</option>
+    </select>
+    <select id="f-client" onchange="render()">
+      <option value="">cliente</option>
+      <option>141</option><option>BECKENBAUER</option><option>NE</option>
+      <option>PLAY</option><option>PUSKAS</option><option>RAND</option>
+      <option>SATOSHI</option><option>SINATRA</option><option>STOCK</option>
+      <option>SWITCH</option><option>TRADE</option><option>VITO</option>
+    </select>
+    <select id="f-cat" onchange="render()">
+      <option value="">categoria</option>
+      <option>Atendimento</option><option>Family Office</option>
+      <option>Investments</option><option>Onboarding</option><option>Portfólio</option>
+    </select>
+    <select id="f-feito" onchange="render()">
+      <option value="">todas</option>
+      <option value="pendente">pendentes</option>
+      <option value="feito">concluídas</option>
+    </select>
+    <button class="filter-clear" onclick="clearFilters()">limpar</button>
+    <span class="task-count" id="task-count"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>prazo</th>
+          <th>tarefa / descrição</th>
+          <th>cliente</th>
+          <th>categoria</th>
+          <th>responsável</th>
+          <th>feito</th>
+          <th>concluído em</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none">nenhuma tarefa encontrada</div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="maybeCloseModal(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">nova tarefa</div>
+    <div class="form-row">
+      <label class="form-label">data</label>
+      <input type="date" id="f-prazo">
+    </div>
+    <div class="form-row">
+      <label class="form-label">tarefa</label>
+      <input type="text" id="f-task" placeholder="descreva a tarefa">
+    </div>
+    <div class="form-row">
+      <label class="form-label">descrição <span style="color:var(--muted);font-size:9px;letter-spacing:0">(opcional)</span></label>
+      <textarea id="f-desc" placeholder="como fazer, contexto, links..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;resize:vertical;min-height:72px;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"></textarea>
+    </div>
+    <div class="form-row">
+      <label class="form-label">cliente</label>
+      <select id="f-new-client">
+        <option value="">selecione</option>
+        <option>141</option><option>BECKENBAUER</option><option>NE</option>
+        <option>PLAY</option><option>PUSKAS</option><option>RAND</option>
+        <option>SATOSHI</option><option>SINATRA</option><option>STOCK</option>
+        <option>SWITCH</option><option>TRADE</option><option>VITO</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">categoria</label>
+      <select id="f-new-cat">
+        <option value="">selecione</option>
+        <option>Atendimento</option><option>Family Office</option>
+        <option>Investments</option><option>Onboarding</option><option>Portfólio</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">responsável</label>
+      <select id="f-new-resp">
+        <option value="">selecione</option>
+        <option>Ramiro</option><option>Vinícius</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">cancelar</button>
+      <button class="btn-save" id="btn-save" onclick="saveTask()">adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-backdrop" id="confirm-backdrop" onclick="maybeCloseConfirm(event)">
+  <div class="confirm-box">
+    <div class="confirm-msg" id="confirm-msg">Excluir esta tarefa?</div>
+    <div class="confirm-actions">
+      <button class="btn-cancel" onclick="closeConfirm()">cancelar</button>
+      <button class="btn-del-confirm" onclick="doDelete()">excluir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SENHA = 'TasksDoT';
+const STORAGE_KEY = 'dot_tasks_v1';
+
+// ── auth ──────────────────────────────────────────────────────────
+function doLogin() {
+  const val = document.getElementById('pwd-input').value;
+  if (val === SENHA) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    render();
+  } else {
+    document.getElementById('login-err').classList.add('show');
+    document.getElementById('pwd-input').value = '';
+    setTimeout(() => document.getElementById('login-err').classList.remove('show'), 2000);
+  }
+}
+
+// ── data ──────────────────────────────────────────────────────────
+const SEED = [{"id": 2, "prazo": "2026-03-31", "task": "Contrato de Gestão", "cliente": "141", "categoria": "Onboarding", "responsavel": "Manu", "feito": false}, {"id": 3, "prazo": "2026-04-13", "task": "Follow up Fabi corretoras - PSF", "cliente": "VITO", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": true}, {"id": 4, "prazo": "2026-04-14", "task": "Definição da alocação Onshore", "cliente": "VITO", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": true}, {"id": 5, "prazo": "2026-04-14", "task": "volume dos fundos que queremos ter acesso", "cliente": "VITO", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": true}, {"id": 6, "prazo": "2026-04-14", "task": "Reunião sobre alocação", "cliente": "VITO", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": true}, {"id": 7, "prazo": "2026-04-15", "task": "Falar com Francisco sobre Acesso Johan", "cliente": "PUSKAS", "categoria": "Onboarding", "responsavel": "Ramiro", "feito": true}, {"id": 8, "prazo": "2026-04-15", "task": "Definir alocação DI Flávia", "cliente": "STOCK", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 9, "prazo": "2026-04-15", "task": "Pagamento declaração quinquenal", "cliente": "SATOSHI", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 10, "prazo": "2026-04-17", "task": "Cadastro Investidor QiTECH", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Vinícius", "feito": true}, {"id": 11, "prazo": "2026-04-17", "task": "Pachama", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Vinícius", "feito": true}, {"id": 12, "prazo": "2026-04-17", "task": "Nord", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Vinícius", "feito": true}, {"id": 13, "prazo": "2026-04-17", "task": "Financiamento Volpi", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Vinícius", "feito": true}, {"id": 14, "prazo": "2026-04-17", "task": "Cotar trabalho com Joana / Bel", "cliente": "141", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 15, "prazo": "2026-04-17", "task": "Auxiliar advogados DIRPF 2026", "cliente": "STOCK", "categoria": "Family Office", "responsavel": "Ramiro", "feito": true}, {"id": 16, "prazo": "2026-04-17", "task": "Criar apresentação sobre portólio", "cliente": "BECKENBAUER", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 17, "prazo": "2026-04-17", "task": "Previdência  registrar a Flávia como beneficiária", "cliente": "STOCK", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 18, "prazo": "2026-04-17", "task": "Envio fatura 1Q 2026", "cliente": "SINATRA", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": true}, {"id": 19, "prazo": "2026-04-17", "task": "Enviar fatura 1Q 2026 (desde dez/25)", "cliente": "STOCK", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 20, "prazo": "2026-04-17", "task": "Envio fatura 1Q 2026", "cliente": "NE", "categoria": "Atendimento", "responsavel": "Felipe", "feito": false}, {"id": 21, "prazo": "2026-04-22", "task": "Hognis", "cliente": "SATOSHI", "categoria": "", "responsavel": "", "feito": false}, {"id": 22, "prazo": "2026-04-22", "task": "D1 capital partners - Kulic", "cliente": "PUSKAS", "categoria": "", "responsavel": "", "feito": false}, {"id": 23, "prazo": "2026-04-22", "task": "Envio fatura 1Q 2026", "cliente": "SATOSHI", "categoria": "Atendimento", "responsavel": "", "feito": false}, {"id": 24, "prazo": "2026-04-22", "task": "Cobrar fatura Q4 2025 / Q1 2026", "cliente": "PUSKAS", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 25, "prazo": "2026-04-22", "task": "Envio fatura 1Q 2026", "cliente": "141", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 26, "prazo": "2026-04-23", "task": "Entender ajuda Entidade PTET", "cliente": "SINATRA", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 28, "prazo": "2026-04-28", "task": "Mapa de ativos", "cliente": "BECKENBAUER", "categoria": "", "responsavel": "Ramiro", "feito": false}, {"id": 29, "prazo": "2026-04-29", "task": "Hogni I FL - estudo sobre refinancing", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 30, "prazo": "2026-04-29", "task": "Imóvel PJM + Barão (financiamento e liquidez)", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 31, "prazo": "2026-04-29", "task": "Estudo Imovel Aspen x Venda portfolio atual + panorama Liquidez Partrimonio", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 32, "prazo": "2026-04-29", "task": "Executar venda secundário Revolut", "cliente": "SATOSHI", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 33, "prazo": "2026-04-29", "task": "Preencher formulários LLCs", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 34, "prazo": "2026-04-29", "task": "DIRPF'", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 35, "prazo": "2026-04-29", "task": "Gestão Liquidez contas Offshore", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 36, "prazo": "2026-04-29", "task": "Revisão do Plano Sucessório - Camila", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 37, "prazo": "2026-04-29", "task": "Conversa sobre Investimentos Pershing Geraldine", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 38, "prazo": "2026-04-29", "task": "Preencher ES / FAR Pitanga - Kishikan - GE32", "cliente": "SATOSHI", "categoria": "Family Office", "responsavel": "Vinícius", "feito": false}, {"id": 39, "prazo": "2026-04-30", "task": "Ficha Cadastral 5 Vitos", "cliente": "VITO", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 40, "prazo": "2026-04-30", "task": "Liberar acessos bancos (JP & MS)", "cliente": "PUSKAS", "categoria": "Onboarding", "responsavel": "Ramiro", "feito": false}, {"id": 41, "prazo": "2026-04-30", "task": "Assinar contrato de gestão", "cliente": "RAND", "categoria": "Onboarding", "responsavel": "Ramiro", "feito": false}, {"id": 42, "prazo": "2026-04-30", "task": "Preparar contrato de gestão", "cliente": "BECKENBAUER", "categoria": "Onboarding", "responsavel": "Ramiro", "feito": false}, {"id": 43, "prazo": "2026-04-30", "task": "Ficha Cadastral", "cliente": "PLAY", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 44, "prazo": "2026-04-30", "task": "Assinar Ficha Cadastral", "cliente": "TRADE", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 45, "prazo": "2026-04-30", "task": "Assinar Ficha Cadastral", "cliente": "SWITCH", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 46, "prazo": "2026-04-30", "task": "Assinar Ficha Cadastral", "cliente": "NE", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 47, "prazo": "2026-04-30", "task": "Contrato de Gestão Nelson / Maropar", "cliente": "VITO", "categoria": "Onboarding", "responsavel": "Manu", "feito": false}, {"id": 48, "prazo": "2026-04-30", "task": "Ficha Cadastral", "cliente": "BECKENBAUER", "categoria": "Onboarding", "responsavel": "Vinícius", "feito": false}, {"id": 49, "prazo": "2026-04-30", "task": "leAD - tocar projeto", "cliente": "VITO", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 50, "prazo": "2026-04-30", "task": "Investimento D1 Private Fund", "cliente": "PUSKAS", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 51, "prazo": "2026-04-30", "task": "Acesso  Holdings Real Estate", "cliente": "RAND", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 52, "prazo": "2026-04-30", "task": "Criar acesso + FTP Santander", "cliente": "BECKENBAUER", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 53, "prazo": "2026-04-30", "task": "Illíquidos - Preparar visão consolidada", "cliente": "STOCK", "categoria": "Investments", "responsavel": "Vinícius", "feito": false}, {"id": 54, "prazo": "2026-04-30", "task": "Auxiliar processo compra Imovel", "cliente": "PLAY", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 55, "prazo": "2026-04-30", "task": "abertura da conta no Morgan Stanley", "cliente": "TRADE", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 56, "prazo": "2026-04-30", "task": "abertura da conta no Morgan Stanley", "cliente": "SWITCH", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 57, "prazo": "2026-04-30", "task": "CRS/FATCA Form for Kulic Holdings Ltd", "cliente": "PUSKAS", "categoria": "Investments", "responsavel": "Vinícius", "feito": false}, {"id": 58, "prazo": "2026-04-30", "task": "NPV DST delaware franchise tax", "cliente": "PUSKAS", "categoria": "Investments", "responsavel": "Vinícius", "feito": false}, {"id": 59, "prazo": "2026-04-30", "task": "Checar acessos fundos VC", "cliente": "RAND", "categoria": "Investments", "responsavel": "Vinícius", "feito": false}, {"id": 60, "prazo": "2026-04-30", "task": "Criar acesso + FTP ITAU", "cliente": "BECKENBAUER", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 61, "prazo": "2026-04-30", "task": "Inicio gestão carteira XP", "cliente": "TRADE", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 62, "prazo": "2026-04-30", "task": "Inicio gestão carteira XP", "cliente": "SWITCH", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 63, "prazo": "2026-04-30", "task": "Divida BTG - VTAL", "cliente": "PUSKAS", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 64, "prazo": "2026-04-30", "task": "Criar acesso + FTP XP", "cliente": "BECKENBAUER", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 65, "prazo": "2026-04-30", "task": "Kulic - BTG Cayman", "cliente": "PUSKAS", "categoria": "Investments", "responsavel": "Vinícius", "feito": false}, {"id": 66, "prazo": "2026-04-30", "task": "Criar acesso + FTP Morgan Stanley", "cliente": "BECKENBAUER", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 67, "prazo": "2026-04-30", "task": "Histórico Contábil REORG", "cliente": "VITO", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 68, "prazo": "2026-04-30", "task": "Auxiliar planejamento Fiscal Brasil e BVI", "cliente": "PLAY", "categoria": "Family Office", "responsavel": "Felipe", "feito": false}, {"id": 69, "prazo": "2026-04-30", "task": "Auxilio na DIRPF", "cliente": "TRADE", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 70, "prazo": "2026-04-30", "task": "Auxilio na DIRPF", "cliente": "SWITCH", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 71, "prazo": "2026-04-30", "task": "Após checkpoint, definir Advogado", "cliente": "141", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 72, "prazo": "2026-04-30", "task": "Reunião com Bel Calich", "cliente": "TRADE", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 73, "prazo": "2026-04-30", "task": "Reunião com Bel Calich", "cliente": "SWITCH", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 74, "prazo": "2026-04-30", "task": "Estudo Vinyard (early managers)", "cliente": "SATOSHI", "categoria": "Portfólio", "responsavel": "Felipe", "feito": false}, {"id": 75, "prazo": "2026-04-30", "task": "Acompanhar resgates fundos Equities", "cliente": "141", "categoria": "Portfólio", "responsavel": "Vinícius", "feito": false}, {"id": 76, "prazo": "2026-04-30", "task": "Montar portfólio DOT ON e OFF", "cliente": "TRADE", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 77, "prazo": "2026-04-30", "task": "Montar portfólio DOT ON e OFF", "cliente": "SWITCH", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 78, "prazo": "2026-04-30", "task": "Acompanhar portfólio DOT", "cliente": "NE", "categoria": "Portfólio", "responsavel": "Felipe", "feito": false}, {"id": 79, "prazo": "2026-04-30", "task": "Definição Clube Raiz", "cliente": "VITO", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 80, "prazo": "2026-04-30", "task": "Acompanhar enquadramento fundo", "cliente": "141", "categoria": "Portfólio", "responsavel": "Vinícius", "feito": false}, {"id": 81, "prazo": "2026-04-30", "task": "Marcar Checkpoint após report", "cliente": "141", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 82, "prazo": "2026-04-30", "task": "Acertar dinâmica de serviço - valor mínimo", "cliente": "PLAY", "categoria": "Atendimento", "responsavel": "Felipe", "feito": false}, {"id": 83, "prazo": "2026-04-30", "task": "Marcar nova reunião de trabalho abr26?", "cliente": "TRADE", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 84, "prazo": "2026-04-30", "task": "Marcar nova reunião de trabalho abr26?", "cliente": "SWITCH", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 85, "prazo": "2026-05-30", "task": "Enviar fatura 2026", "cliente": "RAND", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 86, "prazo": "2026-06-30", "task": "Abertura conta Morgan Stanley / BTG", "cliente": "141", "categoria": "Investments", "responsavel": "Ramiro", "feito": false}, {"id": 87, "prazo": "2026-06-30", "task": "Realizar Diagnóstico Sucessório?", "cliente": "VITO", "categoria": "Family Office", "responsavel": "Ramiro", "feito": false}, {"id": 88, "prazo": "2026-06-30", "task": "Plano Plurianual", "cliente": "BECKENBAUER", "categoria": "Portfólio", "responsavel": "Ramiro", "feito": false}, {"id": 89, "prazo": "2026-07-31", "task": "Enviar 1ª parcela Fatura", "cliente": "BECKENBAUER", "categoria": "Atendimento", "responsavel": "Ramiro", "feito": false}, {"id": 91, "prazo": "", "task": "Contabilidade BVIs?", "cliente": "PUSKAS", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 92, "prazo": "", "task": "Declaração IR?", "cliente": "PUSKAS", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 93, "prazo": "", "task": "Mortgage US", "cliente": "PUSKAS", "categoria": "Family Office", "responsavel": "", "feito": false}, {"id": 94, "prazo": "", "task": "Invoice", "cliente": "SATOSHI", "categoria": "Atendimento", "responsavel": "", "feito": false}];
+
+function loadTasks() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(SEED));
+}
+
+function saveTasks(tasks) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+let tasks = loadTasks();
+let nextId = Math.max(...tasks.map(t => t.id)) + 1;
+
+// ── urgency ───────────────────────────────────────────────────────
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function urgClass(prazo) {
+  if (!prazo) return 'sem';
+  const today = todayStr();
+  const diff = Math.round((new Date(prazo+'T12:00:00') - new Date(today+'T00:00:00')) / 86400000);
+  if (diff < 0) return 'vencida';
+  if (diff === 0) return 'hoje';
+  if (diff <= 7) return 'semana';
+  return 'normal';
+}
+
+function urgOrder(prazo) {
+  if (!prazo) return '9999-99-99';
+  return prazo;
+}
+
+function fmtPrazo(prazo) {
+  if (!prazo) return '—';
+  const [y,m,d] = prazo.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ── render ────────────────────────────────────────────────────────
+function getFilters() {
+  return {
+    resp:   document.getElementById('f-resp').value,
+    client: document.getElementById('f-client').value,
+    cat:    document.getElementById('f-cat').value,
+    feito:  document.getElementById('f-feito').value,
+  };
+}
+
+function render() {
+  const f = getFilters();
+  let list = tasks.filter(t => {
+    if (f.resp   && t.responsavel !== f.resp)   return false;
+    if (f.client && t.cliente !== f.client)      return false;
+    if (f.cat    && t.categoria !== f.cat)       return false;
+    if (f.feito === 'pendente' && t.feito)       return false;
+    if (f.feito === 'feito'   && !t.feito)       return false;
+    return true;
+  });
+
+  // sort by urgency then prazo
+  const urgPriority = { vencida: 0, hoje: 1, semana: 2, normal: 3, sem: 4 };
+  list.sort((a, b) => {
+    const ua = urgPriority[urgClass(a.prazo)];
+    const ub = urgPriority[urgClass(b.prazo)];
+    if (ua !== ub) return ua - ub;
+    return urgOrder(a.prazo).localeCompare(urgOrder(b.prazo));
+  });
+
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('empty');
+  document.getElementById('task-count').textContent = list.length + ' tarefa' + (list.length !== 1 ? 's' : '');
+
+  if (!list.length) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = list.map(t => {
+    const urg = urgClass(t.prazo);
+    const dotColor = urg === 'vencida' ? '#ff5f57' : urg === 'hoje' ? '#ffbe2e' : urg === 'semana' ? '#c8f06e' : '#333';
+    const prazoClass = `prazo-${urg}`;
+    const respDisplay = t.responsavel || '—';
+    const respClass = t.responsavel ? 'badge-resp' : 'badge-sem';
+    return `
+      <tr class="${t.feito ? 'done' : ''}" data-id="${t.id}">
+        <td class="td-prazo">
+          <span class="urg-dot" style="background:${dotColor}"></span>
+          <span class="${prazoClass}">${fmtPrazo(t.prazo)}</span>
+        </td>
+        <td class="desc-cell"><span class="task-name">${escHtml(t.task)}</span>${t.descricao ? `<div class="desc-text">${escHtml(t.descricao)}</div>` : ''}</td>
+        <td><span class="badge badge-cliente">${escHtml(t.cliente)}</span></td>
+        <td><span class="badge badge-cat">${escHtml(t.categoria)}</span></td>
+        <td><span class="badge ${respClass}">${escHtml(respDisplay)}</span></td>
+        <td class="td-done">
+          <button class="done-btn ${t.feito ? 'checked' : ''}" onclick="toggleDone(${t.id})" title="marcar como feita">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="2,6 5,9 10,3"/>
+            </svg>
+          </button>
+        </td>
+        <td style="text-align:center">${t.feito && t.concluidoEm ? `<span class="concluido-date">${fmtPrazo(t.concluidoEm)}</span>` : '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
+        <td class="td-actions">
+          <button class="act-btn edit" onclick="openEdit(${t.id})" title="editar">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8.5 1.5l2 2L3 11H1V9L8.5 1.5z"/>
+            </svg>
+          </button>
+          <button class="act-btn del" onclick="confirmDelete(${t.id})" title="excluir">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/>
+            </svg>
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleDone(id) {
+  const t = tasks.find(x => x.id === id);
+  if (t) {
+    t.feito = !t.feito;
+    t.concluidoEm = t.feito ? todayStr() : null;
+    saveTasks(tasks); render();
+  }
+}
+
+function clearFilters() {
+  ['f-resp','f-client','f-cat','f-feito'].forEach(id => document.getElementById(id).value = '');
+  render();
+}
+
+// ── modal ─────────────────────────────────────────────────────────
+let editingId = null;
+
+function openModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'nova tarefa';
+  document.getElementById('btn-save').textContent = 'adicionar';
+  document.getElementById('f-prazo').value = todayStr();
+  document.getElementById('f-task').value = '';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-new-client').value = '';
+  document.getElementById('f-new-cat').value = '';
+  document.getElementById('f-new-resp').value = '';
+  document.getElementById('modal-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('f-task').focus(), 200);
+}
+
+function openEdit(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'editar tarefa';
+  document.getElementById('btn-save').textContent = 'salvar';
+  document.getElementById('f-prazo').value = t.prazo || '';
+  document.getElementById('f-task').value = t.task;
+  document.getElementById('f-desc').value = t.descricao || '';
+  document.getElementById('f-new-client').value = t.cliente;
+  document.getElementById('f-new-cat').value = t.categoria;
+  document.getElementById('f-new-resp').value = t.responsavel;
+  document.getElementById('modal-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('f-task').focus(), 200);
+}
+
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+  editingId = null;
+}
+
+function maybeCloseModal(e) {
+  if (e.target === document.getElementById('modal-backdrop')) closeModal();
+}
+
+function saveTask() {
+  const task = document.getElementById('f-task').value.trim();
+  const cliente = document.getElementById('f-new-client').value;
+  const categoria = document.getElementById('f-new-cat').value;
+  const responsavel = document.getElementById('f-new-resp').value;
+  const prazo = document.getElementById('f-prazo').value;
+  const descricao = document.getElementById('f-desc').value.trim();
+  if (!task || !cliente || !categoria) {
+    document.getElementById('f-task').style.borderColor = task ? '' : '#ff5f57';
+    document.getElementById('f-new-client').style.borderColor = cliente ? '' : '#ff5f57';
+    document.getElementById('f-new-cat').style.borderColor = categoria ? '' : '#ff5f57';
+    return;
+  }
+  ['f-task','f-new-client','f-new-cat'].forEach(id => document.getElementById(id).style.borderColor = '');
+  if (editingId !== null) {
+    const t = tasks.find(x => x.id === editingId);
+    if (t) { t.prazo = prazo; t.task = task; t.descricao = descricao; t.cliente = cliente; t.categoria = categoria; t.responsavel = responsavel; }
+  } else {
+    tasks.push({ id: nextId++, prazo, task, descricao, cliente, categoria, responsavel, feito: false, concluidoEm: null });
+  }
+  saveTasks(tasks);
+  closeModal();
+  render();
+}
+
+// ── delete ────────────────────────────────────────────────────────
+let deleteId = null;
+
+function confirmDelete(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  deleteId = id;
+  document.getElementById('confirm-msg').innerHTML = `Excluir tarefa <strong>${escHtml(t.task)}</strong>?`;
+  document.getElementById('confirm-backdrop').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-backdrop').classList.remove('open');
+  deleteId = null;
+}
+
+function maybeCloseConfirm(e) {
+  if (e.target === document.getElementById('confirm-backdrop')) closeConfirm();
+}
+
+function doDelete() {
+  if (deleteId === null) return;
+  tasks = tasks.filter(x => x.id !== deleteId);
+  saveTasks(tasks);
+  closeConfirm();
+  render();
+}
+
+// keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeConfirm(); }
+  if (e.key === 'Enter' && document.getElementById('modal-backdrop').classList.contains('open')) {
+    if (document.activeElement.tagName !== 'BUTTON') saveTask();
+  }
+});
+</script>
+</body>
+</html>
